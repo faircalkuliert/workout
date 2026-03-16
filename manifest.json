@@ -1,0 +1,11 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Carl Core",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "CaCo",
+  "start_url": "/https://faircalkuliert.github.io/workout/",
+  "theme_color": "#0a0a0c"
+}
