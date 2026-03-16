@@ -1,0 +1,21 @@
+{
+  "name": "Core & Haltung",
+  "short_name": "Workout",
+  "description": "Tägliche Morgenroutine für Core, Rücken und Haltung",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0c",
+  "theme_color": "#0a0a0c",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%230a0a0c'/%3E%3Cellipse cx='256' cy='145' rx='52' ry='56' fill='%236eb5ff'/%3E%3Crect x='220' y='195' width='72' height='130' rx='32' fill='%236eb5ff'/%3E%3Crect x='155' y='210' width='68' height='24' rx='12' fill='%234ecdc4'/%3E%3Crect x='289' y='210' width='68' height='24' rx='12' fill='%234ecdc4'/%3E%3Crect x='222' y='320' width='30' height='110' rx='15' fill='%236eb5ff'/%3E%3Crect x='260' y='320' width='30' height='110' rx='15' fill='%236eb5ff'/%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["health", "fitness", "sports"],
+  "screenshots": []
+}
