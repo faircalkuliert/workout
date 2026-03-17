@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#0a0a0c"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Core & Haltung"/>
+  <link rel="manifest" href="manifest.json"/>
+  <title>Core &amp; Haltung</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    body{background:#0a0a0c;overscroll-behavior:none;}
+    ::-webkit-scrollbar{display:none;}
+    .yt-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;margin-top:12px;background:#1a0a0a;border:1px solid #ff4444;border-radius:10px;color:#ff6666;font-family:'Courier New',monospace;font-size:12px;letter-spacing:0.08em;cursor:pointer;text-decoration:none;}
+    .yt-icon{width:20px;height:14px;background:#ff0000;border-radius:3px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .yt-triangle{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:9px solid white;margin-left:1px;}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    .pulsing{animation:pulse 1s ease-in-out infinite;}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── DATA ─────────────────────────────────────────────────────────────────────
+const WEEKS = [
+  { label:"Woche 1", desc:"Basis aufbauen", data:[
+    {sets:1,reps:"2",   tempo:"30s halten",   v:"Basis",          h:""},
+    {sets:3,reps:"12",  tempo:"3s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"10",  tempo:"2s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"6",   tempo:"2s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"5",   tempo:"3s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"5",   tempo:"4s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"8",   tempo:"2s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"8",   tempo:"3s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"5",   tempo:"3s halten",    v:"Basis",          h:""},
+  ]},
+  { label:"Woche 2", desc:"Volumen erhöhen", data:[
+    {sets:1,reps:"2",   tempo:"30s halten",   v:"Basis",          h:""},
+    {sets:3,reps:"12",  tempo:"3s halten",    v:"Basis",          h:""},
+    {sets:3,reps:"10",  tempo:"2s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"8",   tempo:"2s halten",    v:"Basis",          h:""},
+    {sets:3,reps:"5",   tempo:"3s halten",    v:"Basis",          h:""},
+    {sets:3,reps:"5",   tempo:"4s halten",    v:"Basis",          h:""},
+    {sets:3,reps:"10",  tempo:"2s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"10",  tempo:"3s halten",    v:"Basis",          h:""},
+    {sets:2,reps:"6",   tempo:"3s halten",    v:"Basis",          h:""},
+  ]},
+  { label:"Woche 3", desc:"Variationen steigern", data:[
+    {sets:1,reps:"2",   tempo:"30s halten",   v:"Türrahmen",      h:"Unterarm an Türrahmen, Brust vorwärts"},
+    {sets:3,reps:"12",  tempo:"5s halten",    v:"Mit Widerstand", h:"2 Finger leicht gegen Kinn drücken"},
+    {sets:3,reps:"10",  tempo:"2s halten",    v:"Mit Stab",       h:"Besenstiel hinter Rücken halten"},
+    {sets:3,reps:"8",   tempo:"3s halten",    v:"Mit Band",       h:"Band unter Bauch fixieren"},
+    {sets:3,reps:"6",   tempo:"5s halten",    v:"Puls oben",      h:"3× kleiner Puls in Endposition"},
+    {sets:3,reps:"6",   tempo:"5s halten",    v:"Bein gestreckt", h:"Bein komplett ausstrecken"},
+    {sets:3,reps:"10",  tempo:"3s halten",    v:"Einbeinig",      h:"Gegenüberl. Bein oben ausstrecken"},
+    {sets:3,reps:"8",   tempo:"5s halten",    v:"Arme in Y",      h:"Arme diagonal nach vorne strecken"},
+    {sets:3,reps:"6",   tempo:"3s halten",    v:"Negativ",        h:"3 Sek. langsam absenken"},
+  ]},
+  { label:"Woche 4", desc:"Maximum", data:[
+    {sets:1,reps:"2",   tempo:"30s halten",   v:"Türrahmen",      h:"Unterarm an Türrahmen, Brust vorwärts"},
+    {sets:3,reps:"12",  tempo:"5s halten",    v:"Mit Widerstand", h:"2 Finger leicht gegen Kinn drücken"},
+    {sets:3,reps:"12",  tempo:"2s halten",    v:"Mit Stab",       h:"Besenstiel hinter Rücken halten"},
+    {sets:3,reps:"10",  tempo:"3s halten",    v:"Mit Band",       h:"Band unter Bauch fixieren"},
+    {sets:3,reps:"8",   tempo:"5s halten",    v:"Puls oben",      h:"3× kleiner Puls in Endposition"},
+    {sets:3,reps:"8",   tempo:"5s halten",    v:"Bein gestreckt", h:"Bein komplett ausstrecken"},
+    {sets:3,reps:"12",  tempo:"3s halten",    v:"Einbeinig",      h:"Gegenüberl. Bein oben ausstrecken"},
+    {sets:3,reps:"10",  tempo:"5s halten",    v:"Arme in Y",      h:"Arme diagonal nach vorne strecken"},
+    {sets:3,reps:"8",   tempo:"3s halten",    v:"Erhöht",         h:"Füße auf Stuhl oder Sofa"},
+  ]},
+];
+
+const EX = [
+  {name:"Brustdehnung",  emoji:"🚪",color:"#f97316",cat:"Einleitung · Pflicht",
+   desc:"Im Türrahmen stehen. Unterarme rechts und links am Rahmen auf 90°. Einen Schritt nach vorne – Brust öffnet sich und dehnt die verkürzte Brustmuskulatur.",
+   tip:"Schlüsselvorübung: ohne Brustdehnung arbeiten alle Haltungsübungen gegen einen dauerhaften Widerstand.",
+   yt:"Brustdehnung+Türrahmen+Pectoralis+Übung+Anleitung", isNew:true},
+  {name:"Chin Tuck",     emoji:"🎯",color:"#6eb5ff",cat:"Kopfhaltung · Priorität 1",
+   desc:"Kinnspitze gerade nach hinten ziehen – kein Nicken. Wie ein bewusstes Doppelkinn. Halten, lösen. Täglich auch außerhalb des Trainings: jedes Mal beim Smartphone.",
+   tip:"Stell dir vor, ein Faden zieht deinen Hinterkopf zur Decke – Nacken wird lang, nicht gebogen.",
+   yt:"Chin+Tuck+Vorwärtskopfhaltung+korrigieren+Anleitung", isNew:false},
+  {name:"Wall Angels",   emoji:"🤸",color:"#4ecdc4",cat:"Haltung & Schultern",
+   desc:"Rücken flach an Wand. Arme in W-Position (Ellbogen 90°), langsam zu Y schieben – Kontakt zur Wand halten.",
+   tip:"Lendenwirbel bleibt zur Wand. Qualität vor Amplitude: lieber kleinere Bewegung.",
+   yt:"Wall+Angels+Schultern+Haltung+Anleitung+korrekt", isNew:false},
+  {name:"YTW-Raise",     emoji:"⬆️",color:"#a78bfa",cat:"Rückenbreite · Priorität 2",
+   desc:"Bauchlage. Arme nacheinander in Y-, T- und W-Form heben. Daumen zur Decke. Ab Woche 3: Band unter Bauch fixieren.",
+   tip:"Schulterblätter zusammenziehen und nach unten – nicht mit dem Nacken kompensieren.",
+   yt:"YTW+Raise+Rücken+Schulterblatt+Übung+Tutorial", isNew:false},
+  {name:"Bird Dog",      emoji:"🐕",color:"#86efac",cat:"Core & Rücken",
+   desc:"Vierfüßlerstand, Rücken neutral. Gegenüberliegende Hand & Bein ausstrecken. Hüfte parallel. Halten, kontrolliert zurück.",
+   tip:"Stell dir ein Glas Wasser auf deinem Rücken vor – es darf nicht kippen.",
+   yt:"Bird+Dog+Core+Übung+korrekte+Ausführung+Deutsch", isNew:false},
+  {name:"Dead Bug",      emoji:"🪲",color:"#6ee7b7",cat:"Core & LWS",
+   desc:"Rückenlage, Arme zur Decke, Beine 90°. Gegenüberliegende Hand & Bein langsam absenken ohne den Rücken abzuheben.",
+   tip:"Lendenwirbel aktiv in den Boden drücken – sobald er sich hebt, zu weit gegangen.",
+   yt:"Dead+Bug+Core+Übung+richtig+ausführen+Anleitung", isNew:false},
+  {name:"Glute Bridge",  emoji:"🌉",color:"#fb7185",cat:"Beckenboden & Gesäß",
+   desc:"Rückenlage, Füße hüftbreit. Beim Hochkommen Beckenboden aktiv einziehen. Oben halten, beim Absenken lösen.",
+   tip:"Beckenboden und Gesäß gleichzeitig anspannen – diese Kombination ist die eigentliche Übung.",
+   yt:"Glute+Bridge+Beckenboden+Gesäß+Übung+richtig", isNew:false},
+  {name:"Superman Hold", emoji:"🦸",color:"#fbbf24",cat:"Unterer Rücken",
+   desc:"Bauchlage, Arme gestreckt. Arme, Brust und Beine gleichzeitig heben. Blick bleibt nach unten.",
+   tip:"Nacken verlängert halten – kein Überstrecken im Hals.",
+   yt:"Superman+Hold+Rückenstrecker+Übung+Anleitung", isNew:false},
+  {name:"Pike Push-up",  emoji:"🔺",color:"#c084fc",cat:"Schultern & Breite",
+   desc:"Hüfte hoch in umgekehrtes V. Kopf zwischen Arme absenken bis Schläfen fast den Boden berühren, zurückdrücken.",
+   tip:"Je steiler der Winkel, desto mehr Schulterarbeit. Mit Füßen auf einer Erhöhung steigern.",
+   yt:"Pike+Push+Up+Schultern+Anleitung+korrekt+ausführen", isNew:false},
+];
+
+// ── AUDIO ─────────────────────────────────────────────────────────────────────
+let _audioCtx = null;
+function getACtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+function tone(freq, dur, delay=0, vol=0.18) {
+  try {
+    const ctx = getACtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sine'; o.frequency.value = freq;
+    const t = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    o.start(t); o.stop(t + dur + 0.05);
+  } catch(e) {}
+}
+const SIGNALS = {
+  prepare:   () => { tone(660,0.25,0); tone(880,0.3,0.28); },
+  hold:      () => { tone(880,0.45,0,0.22); },
+  rest:      () => { tone(660,0.2,0); tone(550,0.3,0.22); },
+  set_rest:  () => { tone(550,0.2,0); tone(440,0.2,0.22); tone(330,0.4,0.44); },
+  complete:  () => { tone(660,0.2,0); tone(770,0.2,0.22); tone(880,0.5,0.44,0.25); },
+};
+
+// ── TIMER HELPERS ─────────────────────────────────────────────────────────────
+function parseTiming(prog) {
+  const secMatch = prog.tempo.match(/(\d+)s/);
+  const holdTime = secMatch ? parseInt(secMatch[1]) : 3;
+  const totalReps = parseInt(prog.reps) || 1;
+  const repRest = holdTime >= 20 ? 5 : 8;
+  return { holdTime, totalReps, repRest, setRest:30 };
+}
+
+// Build flat phase list for one full set
+function buildSetPhases(prog) {
+  const { holdTime, totalReps, repRest } = parseTiming(prog);
+  const phases = [{ type:'prepare', dur:3 }];
+  for (let r = 0; r < totalReps; r++) {
+    phases.push({ type:'hold', dur:holdTime, rep:r+1, totalReps });
+    if (r < totalReps-1) phases.push({ type:'rep_rest', dur:repRest });
+  }
+  phases.push({ type:'done', dur:0 });
+  return phases;
+}
+
+// ── FIGURES ───────────────────────────────────────────────────────────────────
+function Figure({ id, color }) {
+  const c = color, dim = color+"55";
+  const sv = { width:"100%", height:"100%", overflow:"visible" };
+  const ks = "0.45 0 0.55 1;0.45 0 0.55 1", kt = "0;0.5;1";
+  if (id===0) return (<svg viewBox="0 0 180 230" style={sv}>
+    <rect x="10" y="10" width="12" height="215" rx="4" fill={dim}/><rect x="158" y="10" width="12" height="215" rx="4" fill={dim}/><rect x="10" y="10" width="160" height="12" rx="4" fill={dim}/>
+    <rect x="80" y="148" width="16" height="46" rx="8" fill={c}/><rect x="100" y="148" width="16" height="46" rx="8" fill={c}/>
+    <ellipse cx="88" cy="194" rx="22" ry="9" fill={c}/><ellipse cx="108" cy="194" rx="22" ry="9" fill={c}/>
+    <rect x="78" y="82" width="40" height="68" rx="14" fill={c}/>
+    <g><ellipse cx="78" cy="95" rx="14" ry="9" fill={c}/><rect x="22" y="88" width="14" height="36" rx="7" fill={c}/><rect x="22" y="122" width="14" height="30" rx="7" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="0,78,95;-18,78,95;0,78,95" dur="2.8s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+    <g><ellipse cx="118" cy="95" rx="14" ry="9" fill={c}/><rect x="160" y="88" width="14" height="36" rx="7" fill={c}/><rect x="160" y="122" width="14" height="30" rx="7" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="0,118,95;18,118,95;0,118,95" dur="2.8s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+    <rect x="87" y="70" width="14" height="15" rx="7" fill={c}/>
+    <g><ellipse cx="94" cy="51" rx="20" ry="22" fill={c}/>
+      <animateTransform attributeName="transform" type="translate" values="0,0;8,3;0,0" dur="2.8s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+  </svg>);
+  if (id===1) return (<svg viewBox="0 0 160 235" style={sv}>
+    <line x1="20" x2="140" y1="223" y2="223" stroke={dim} strokeWidth="2.5" strokeDasharray="5,4"/>
+    <rect x="84" y="67" width="14" height="36" rx="7" fill={dim}/><rect x="85" y="101" width="12" height="30" rx="6" fill={dim}/>
+    <rect x="76" y="133" width="17" height="46" rx="8" fill={dim}/><rect x="77" y="177" width="14" height="42" rx="7" fill={dim}/><ellipse cx="85" cy="219" rx="24" ry="9" fill={dim}/>
+    <rect x="60" y="59" width="28" height="60" rx="13" fill={c}/><rect x="58" y="115" width="34" height="22" rx="11" fill={c}/><ellipse cx="61" cy="72" rx="10" ry="7" fill={c}/>
+    <rect x="42" y="67" width="14" height="36" rx="7" fill={c}/><rect x="43" y="101" width="12" height="30" rx="6" fill={c}/>
+    <rect x="64" y="133" width="17" height="46" rx="8" fill={c}/><rect x="65" y="177" width="14" height="42" rx="7" fill={c}/><ellipse cx="73" cy="219" rx="24" ry="9" fill={c}/>
+    <rect x="66" y="46" width="15" height="17" rx="7" fill={c}/>
+    <g><ellipse cx="77" cy="27" rx="20" ry="22" fill={c}/><ellipse cx="57" cy="27" rx="5" ry="7" fill={c}/>
+      <animateTransform attributeName="transform" type="translate" values="0,0;-11,0;0,0" dur="2.5s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+  </svg>);
+  if (id===2) return (<svg viewBox="0 0 220 240" style={sv}>
+    <rect x="193" y="0" width="9" height="240" rx="3" fill={dim} opacity="0.4"/>
+    <line x1="20" x2="190" y1="232" y2="232" stroke={dim} strokeWidth="2.5" strokeDasharray="5,4"/>
+    <rect x="72" y="134" width="22" height="48" rx="10" fill={c}/><rect x="74" y="180" width="18" height="44" rx="9" fill={c}/><ellipse cx="84" cy="227" rx="22" ry="10" fill={c}/>
+    <rect x="102" y="134" width="22" height="48" rx="10" fill={c}/><rect x="104" y="180" width="18" height="44" rx="9" fill={c}/><ellipse cx="114" cy="227" rx="22" ry="10" fill={c}/>
+    <rect x="70" y="62" width="56" height="60" rx="15" fill={c}/><rect x="72" y="118" width="52" height="22" rx="11" fill={c}/>
+    <rect x="91" y="50" width="14" height="16" rx="7" fill={c}/><ellipse cx="98" cy="31" rx="20" ry="22" fill={c}/>
+    <g><rect x="63" y="76" width="14" height="64" rx="7" fill={c}/><circle cx="70" cy="140" r="8" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="-90,70,76;-150,70,76;-90,70,76" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+    <g><rect x="119" y="76" width="14" height="64" rx="7" fill={c}/><circle cx="126" cy="140" r="8" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="90,126,76;150,126,76;90,126,76" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+  </svg>);
+  if (id===3) return (<svg viewBox="0 0 250 145" style={sv}>
+    <line x1="10" x2="240" y1="135" y2="135" stroke={dim} strokeWidth="2.5" strokeDasharray="5,4"/>
+    <rect x="10" y="65" width="42" height="22" rx="10" fill={dim}/><rect x="10" y="88" width="42" height="22" rx="10" fill={dim}/>
+    <ellipse cx="74" cy="88" rx="20" ry="22" fill={c}/><rect x="72" y="52" width="100" height="44" rx="18" fill={c}/><ellipse cx="188" cy="74" rx="22" ry="20" fill={c}/>
+    <g><rect x="83" y="0" width="14" height="55" rx="7" fill={c}/><circle cx="90" cy="52" r="9" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="0,90,52;-45,90,52;-90,90,52;-120,90,52;-90,90,52;-45,90,52;0,90,52" keyTimes="0;0.15;0.35;0.5;0.65;0.85;1" dur="3.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"/></g>
+    <g><rect x="83" y="96" width="14" height="55" rx="7" fill={c}/><circle cx="90" cy="96" r="9" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="0,90,96;45,90,96;90,90,96;120,90,96;90,90,96;45,90,96;0,90,96" keyTimes="0;0.15;0.35;0.5;0.65;0.85;1" dur="3.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1;0.4 0 0.6 1"/></g>
+  </svg>);
+  if (id===4) return (<svg viewBox="0 0 240 165" style={sv}>
+    <line x1="10" x2="230" y1="155" y2="155" stroke={dim} strokeWidth="2.5" strokeDasharray="5,4"/>
+    <rect x="60" y="112" width="16" height="40" rx="8" fill={c}/><ellipse cx="68" cy="152" rx="16" ry="8" fill={c}/>
+    <rect x="152" y="112" width="16" height="40" rx="8" fill={c}/><ellipse cx="160" cy="152" rx="16" ry="8" fill={c}/>
+    <rect x="62" y="68" width="110" height="30" rx="13" fill={c}/>
+    <rect x="62" y="96" width="16" height="32" rx="8" fill={c}/><ellipse cx="70" cy="128" rx="12" ry="7" fill={c}/>
+    <ellipse cx="198" cy="76" rx="20" ry="22" fill={c}/><rect x="177" y="64" width="16" height="18" rx="8" fill={c}/>
+    <g><rect x="152" y="70" width="16" height="46" rx="8" fill={c}/><ellipse cx="160" cy="116" rx="12" ry="8" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="0,160,70;-95,160,70;0,160,70" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+    <g><rect x="60" y="68" width="16" height="46" rx="8" fill={c}/><ellipse cx="68" cy="116" rx="12" ry="8" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="0,68,68;95,68,68;0,68,68" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+  </svg>);
+  if (id===5) return (<svg viewBox="0 0 250 140" style={sv}>
+    <line x1="10" x2="240" y1="130" y2="130" stroke={dim} strokeWidth="2.5" strokeDasharray="5,4"/>
+    <ellipse cx="30" cy="100" rx="20" ry="21" fill={c}/><rect x="47" y="95" width="14" height="18" rx="7" fill={c}/>
+    <rect x="58" y="86" width="110" height="30" rx="14" fill={c}/>
+    <rect x="168" y="58" width="15" height="34" rx="7" fill={c}/><rect x="183" y="58" width="34" height="15" rx="7" fill={c}/>
+    <rect x="68" y="38" width="14" height="50" rx="7" fill={dim}/><circle cx="75" cy="38" r="9" fill={dim}/>
+    <g><rect x="92" y="44" width="14" height="46" rx="7" fill={c}/><circle cx="99" cy="44" r="9" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="0,99,90;145,99,90;0,99,90" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+    <g><rect x="143" y="58" width="15" height="34" rx="7" fill={c}/><rect x="143" y="90" width="15" height="32" rx="7" fill={c}/>
+      <animateTransform attributeName="transform" type="rotate" values="0,151,92;55,151,92;0,151,92" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+  </svg>);
+  if (id===6) return (<svg viewBox="0 0 250 148" style={sv}>
+    <line x1="10" x2="240" y1="138" y2="138" stroke={dim} strokeWidth="2.5" strokeDasharray="5,4"/>
+    <ellipse cx="28" cy="108" rx="20" ry="21" fill={c}/><rect x="45" y="98" width="70" height="28" rx="13" fill={c}/><rect x="50" y="124" width="55" height="12" rx="6" fill={dim}/>
+    <ellipse cx="192" cy="133" rx="22" ry="9" fill={c}/><ellipse cx="216" cy="133" rx="18" ry="9" fill={dim}/>
+    <g><rect x="176" y="90" width="15" height="46" rx="7" fill={c}/><rect x="196" y="90" width="13" height="46" rx="7" fill={dim}/>
+      <ellipse cx="138" cy="105" rx="28" ry="22" fill={c}/>
+      <rect x="112" y="94" width="17" height="54" rx="8" fill={c} transform="rotate(-28,121,94)"/>
+      <rect x="130" y="94" width="15" height="54" rx="7" fill={dim} transform="rotate(-26,138,94)"/>
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,-32;0,0" dur="2.5s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+  </svg>);
+  if (id===7) return (<svg viewBox="0 0 250 120" style={sv}>
+    <line x1="10" x2="240" y1="110" y2="110" stroke={dim} strokeWidth="2.5" strokeDasharray="5,4"/>
+    <g><ellipse cx="215" cy="78" rx="20" ry="21" fill={c}/><rect x="193" y="72" width="15" height="18" rx="7" fill={c}/>
+      <rect x="90" y="68" width="108" height="26" rx="12" fill={c}/><ellipse cx="90" cy="82" rx="18" ry="16" fill={c}/>
+      <rect x="14" y="70" width="80" height="14" rx="7" fill={c}/><circle cx="14" cy="77" r="9" fill={c}/>
+      <rect x="20" y="82" width="74" height="12" rx="6" fill={dim}/>
+      <rect x="36" y="78" width="58" height="14" rx="7" fill={c} transform="rotate(-4,65,85)"/>
+      <rect x="40" y="88" width="54" height="12" rx="6" fill={dim} transform="rotate(-4,67,94)"/>
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,-20;0,0" dur="2.5s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+  </svg>);
+  if (id===8) return (<svg viewBox="0 0 220 210" style={sv}>
+    <line x1="10" x2="210" y1="200" y2="200" stroke={dim} strokeWidth="2.5" strokeDasharray="5,4"/>
+    <ellipse cx="108" cy="196" rx="18" ry="9" fill={c}/><ellipse cx="126" cy="196" rx="15" ry="9" fill={dim}/>
+    <rect x="100" y="152" width="16" height="48" rx="8" fill={c}/><rect x="116" y="152" width="14" height="48" rx="7" fill={dim}/>
+    <rect x="98" y="96" width="17" height="62" rx="8" fill={c} transform="rotate(-18,107,96)"/>
+    <rect x="116" y="96" width="15" height="62" rx="7" fill={dim} transform="rotate(-18,124,96)"/>
+    <ellipse cx="117" cy="94" rx="22" ry="18" fill={c}/>
+    <g><rect x="72" y="54" width="50" height="28" rx="12" fill={c} transform="rotate(22,98,68)"/>
+      <ellipse cx="95" cy="60" rx="14" ry="10" fill={c}/>
+      <rect x="48" y="52" width="14" height="48" rx="7" fill={c} transform="rotate(18,56,52)"/>
+      <rect x="110" y="52" width="13" height="48" rx="6" fill={dim} transform="rotate(18,116,52)"/>
+      <rect x="46" y="98" width="13" height="40" rx="6" fill={c} transform="rotate(-16,52,98)"/>
+      <rect x="108" y="98" width="12" height="40" rx="6" fill={dim} transform="rotate(-16,114,98)"/>
+      <ellipse cx="52" cy="194" rx="14" ry="8" fill={c}/><ellipse cx="116" cy="194" rx="13" ry="8" fill={dim}/>
+      <ellipse cx="74" cy="36" rx="19" ry="21" fill={c}/><rect x="84" y="54" width="13" height="15" rx="6" fill={c}/>
+      <animateTransform attributeName="transform" type="translate" values="0,0;0,36;0,0" dur="2.5s" repeatCount="indefinite" calcMode="spline" keySplines={ks} keyTimes={kt}/></g>
+  </svg>);
+  return null;
+}
+
+// ── TIMER RING ─────────────────────────────────────────────────────────────────
+function TimerRing({ phase, secs, total, rep, totalReps, color, onSkip }) {
+  const r = 52, circ = 2*Math.PI*r;
+  const progress = (total>0 && secs>=0) ? Math.max(0, secs/total) : 1;
+  const dash = circ * progress;
+  const LABELS = { prepare:'BEREIT', hold:'HALTEN', rep_rest:'PAUSE', set_rest:'SATZ PAUSE', done:'FERTIG ✓' };
+  const COLORS = { prepare:'#6eb5ff', hold:color, rep_rest:'#3a3a5a', set_rest:'#2a2a4a', done:'#86efac' };
+  const tc = COLORS[phase] || color;
+  const isDone = phase==='done';
+  const isRest = phase==='rep_rest'||phase==='set_rest';
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',padding:'8px 0 4px'}}>
+      <svg width="126" height="126" viewBox="0 0 126 126">
+        <circle cx="63" cy="63" r={r} fill="none" stroke="#161620" strokeWidth="9"/>
+        <circle cx="63" cy="63" r={r} fill="none" stroke={tc} strokeWidth="9"
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
+          transform="rotate(-90 63 63)"
+          style={{transition:'stroke-dasharray 0.9s linear, stroke 0.3s'}}/>
+        {isDone
+          ? <text x="63" y="70" textAnchor="middle" fill={tc} style={{fontSize:'30px',fontFamily:'Courier New,monospace'}}>✓</text>
+          : <text x="63" y="70" textAnchor="middle" fill={tc} style={{fontSize:'34px',fontFamily:'Courier New,monospace',fontWeight:'bold'}} className={isRest?'pulsing':''}>{secs}</text>
+        }
+        <text x="63" y="88" textAnchor="middle" fill={tc} style={{fontSize:'10px',fontFamily:'Courier New,monospace',letterSpacing:'0.15em',opacity:0.85}}>{LABELS[phase]||''}</text>
+        {totalReps>0 && phase==='hold' && (
+          <text x="63" y="102" textAnchor="middle" fill="#2e2e4a" style={{fontSize:'10px',fontFamily:'Courier New,monospace'}}>{rep} / {totalReps}</text>
+        )}
+      </svg>
+      <button onClick={onSkip} style={{marginTop:2,background:'none',border:'none',color:'#2a2a3a',fontFamily:'Courier New,monospace',fontSize:10,cursor:'pointer',letterSpacing:'0.08em',padding:'4px 8px'}}>ÜBERSPRINGEN ›</button>
+    </div>
+  );
+}
+
+// ── YOUTUBE BUTTON ─────────────────────────────────────────────────────────────
+function YTBtn({ query }) {
+  const url = "https://www.youtube.com/results?search_query="+encodeURIComponent(query.replace(/\+/g,' '));
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer" className="yt-btn">
+      <div className="yt-icon"><div className="yt-triangle"/></div>
+      AUF YOUTUBE ANSEHEN
+    </a>
+  );
+}
+
+// ── APP ────────────────────────────────────────────────────────────────────────
+function App() {
+  const [screen, setScreen]       = useState("home");
+  const [weekIdx, setWeekIdx]     = useState(()=>Math.min(parseInt(localStorage.getItem("wk_week")||"0"),3));
+  const [total, setTotal]         = useState(()=>parseInt(localStorage.getItem("wk_total")||"0"));
+  const [exIdx, setExIdx]         = useState(0);
+  const [setsDone, setSetsDone]   = useState(0);
+  const [weekUnlocked, setWkUnlocked] = useState(false);
+  const [timerOn, setTimerOn]     = useState(false);
+
+  // Timer display state
+  const [tmr, setTmr] = useState({ phase:'off', secs:0, total:0, rep:1, totalReps:1 });
+
+  // Mutable ref for timer internals (avoids stale closures in interval)
+  const tRef = useRef({ phase:'off', secs:0, total:0, rep:1, totalReps:1, phases:[], idx:0 });
+
+  const save = (t,w) => { localStorage.setItem("wk_week",String(w)); localStorage.setItem("wk_total",String(t)); };
+
+  const prog = WEEKS[weekIdx]?.data[exIdx] || WEEKS[0].data[0];
+  const ex   = EX[exIdx] || EX[0];
+  const wkd  = WEEKS[weekIdx];
+  const nextIn = weekIdx<3 ? 5-(total%5) : null;
+
+  // advance() – moves to next set or exercise; called manually AND by timer
+  const advanceRef = useRef(null);
+  const advance = useCallback(() => {
+    const p = WEEKS[weekIdx].data[exIdx];
+    if (setsDone+1 < p.sets) {
+      setSetsDone(s=>s+1);
+    } else if (exIdx+1 < EX.length) {
+      setExIdx(e=>e+1); setSetsDone(0);
+    } else {
+      const nt=total+1, nw=Math.min(Math.floor(nt/5),3), ul=nw>weekIdx;
+      setTotal(nt); setWeekIdx(nw); setWkUnlocked(ul); save(nt,nw); setScreen("complete");
+    }
+  }, [weekIdx, exIdx, setsDone, total]);
+  advanceRef.current = advance;
+
+  // Launch timer for current set
+  const launchTimer = useCallback(() => {
+    const phases = buildSetPhases(WEEKS[weekIdx].data[exIdx]);
+    tRef.current = { phases, idx:0, secs:phases[0].dur, total:phases[0].dur, phase:phases[0].type, rep:1, totalReps:parseTiming(WEEKS[weekIdx].data[exIdx]).totalReps };
+    setTmr({ phase:'prepare', secs:phases[0].dur, total:phases[0].dur, rep:1, totalReps:tRef.current.totalReps });
+    SIGNALS.prepare();
+  }, [weekIdx, exIdx]);
+
+  // Auto-(re)launch timer when set/exercise changes while timer is on
+  useEffect(() => {
+    if (!timerOn || screen!=='workout') return;
+    // Small delay so state has settled
+    const id = setTimeout(() => launchTimer(), 100);
+    return () => clearTimeout(id);
+  }, [timerOn, exIdx, setsDone, screen]);
+
+  // The actual interval tick
+  useEffect(() => {
+    if (!timerOn || screen!=='workout') return;
+    const id = setInterval(() => {
+      const t = tRef.current;
+      if (t.phase==='off'||t.phase==='done') return;
+
+      if (t.secs > 1) {
+        t.secs--;
+        setTmr(prev=>({...prev, secs:t.secs}));
+        return;
+      }
+
+      // Advance to next phase
+      const nextIdx = t.idx+1;
+      if (nextIdx >= t.phases.length) return;
+      const next = t.phases[nextIdx];
+
+      if (next.type==='done') {
+        t.phase='done'; t.secs=0;
+        setTmr(prev=>({...prev, phase:'done', secs:0}));
+        SIGNALS.complete();
+        setTimeout(()=>advanceRef.current(), 1400);
+        return;
+      }
+
+      // Signal for upcoming phase
+      if (next.type==='hold')     SIGNALS.hold();
+      if (next.type==='rep_rest') SIGNALS.rest();
+
+      t.idx=nextIdx; t.phase=next.type; t.secs=next.dur; t.total=next.dur;
+      if (next.rep) t.rep=next.rep;
+      setTmr({ phase:next.type, secs:next.dur, total:next.dur, rep:t.rep, totalReps:t.totalReps });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [timerOn, screen]);
+
+  const toggleTimer = () => {
+    if (!timerOn) {
+      setTimerOn(true); // launchTimer fires via effect
+    } else {
+      setTimerOn(false);
+      tRef.current.phase='off';
+      setTmr({phase:'off',secs:0,total:0,rep:1,totalReps:1});
+    }
+  };
+
+  const skipTimer = () => {
+    tRef.current.phase='off';
+    setTmr({phase:'off',secs:0,total:0,rep:1,totalReps:1});
+    advanceRef.current();
+  };
+
+  const base = { minHeight:"100vh",background:"#0a0a0c",color:"#e8e6e1",fontFamily:"Georgia,serif",display:"flex",flexDirection:"column" };
+
+  // ── HOME ──────────────────────────────────────────────────────────────────
+  if (screen==="home") return (
+    <div style={base}>
+      <div style={{padding:"44px 22px 22px",background:"linear-gradient(180deg,#0c0f1c,#0a0a0c)"}}>
+        <p style={{fontFamily:"'Courier New',monospace",fontSize:11,letterSpacing:"0.22em",color:"#2e2e4a",textTransform:"uppercase",marginBottom:8}}>Morgenroutine · Täglich · 10–15 Min</p>
+        <h1 style={{fontSize:32,fontWeight:"normal",letterSpacing:"-0.5px",margin:"0 0 14px"}}>Core &amp; Haltung</h1>
+        <div style={{display:"flex",alignItems:"center",gap:10,flexWrap:"wrap"}}>
+          <div style={{background:"#141428",border:"1px solid #2a2a4e",borderRadius:8,padding:"6px 12px"}}>
+            <span style={{fontFamily:"'Courier New',monospace",fontSize:11,color:"#6eb5ff"}}>{wkd.label}</span>
+          </div>
+          <span style={{fontFamily:"'Courier New',monospace",fontSize:11,color:"#2e2e4a"}}>{wkd.desc}</span>
+        </div>
+        {nextIn&&<p style={{fontFamily:"'Courier New',monospace",fontSize:10,color:"#2a2a3a",marginTop:8}}>{total} absolviert · Woche {weekIdx+2} in {nextIn} Training{nextIn!==1?"s":""}</p>}
+      </div>
+
+      <div style={{flex:1,overflowY:"auto",padding:"4px 16px"}}>
+        {EX.map((e,i)=>{const p=WEEKS[weekIdx].data[i]; return (
+          <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"11px 0",borderBottom:"1px solid #111114"}}>
+            <div style={{width:38,height:38,borderRadius:"50%",background:e.color+"14",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17,flexShrink:0}}>{e.emoji}</div>
+            <div style={{flex:1}}>
+              <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
+                <span style={{fontSize:14}}>{e.name}</span>
+                {e.isNew&&<span style={{fontSize:9,background:"#0a1f0a",border:"1px solid #1a3a1a",borderRadius:4,padding:"1px 5px",fontFamily:"'Courier New',monospace",color:"#86efac"}}>NEU</span>}
+              </div>
+              <div style={{fontFamily:"'Courier New',monospace",fontSize:11,color:"#3a3a52"}}>{p.sets} × {p.reps} · {p.tempo}</div>
+            </div>
+            {p.v!=="Basis"&&<div style={{background:e.color+"12",border:`1px solid ${e.color}28`,borderRadius:6,padding:"2px 8px",fontSize:10,color:e.color,fontFamily:"'Courier New',monospace",flexShrink:0}}>{p.v}</div>}
+          </div>
+        );})}
+      </div>
+
+      <div style={{padding:"12px 20px 36px"}}>
+        {/* Timer toggle on home */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12,padding:"10px 14px",background:"#0e0e14",border:"1px solid #1a1a28",borderRadius:10}}>
+          <div>
+            <div style={{fontFamily:"'Courier New',monospace",fontSize:12,color:"#6eb5ff",marginBottom:2}}>⏱ Geführter Timer</div>
+            <div style={{fontFamily:"'Courier New',monospace",fontSize:10,color:"#2e2e4a"}}>Führt automatisch durch Sätze & Pausen</div>
+          </div>
+          <div onClick={()=>setTimerOn(t=>!t)} style={{width:44,height:24,borderRadius:12,background:timerOn?"#6eb5ff":"#1a1a28",border:`1px solid ${timerOn?"#6eb5ff":"#2a2a3a"}`,cursor:"pointer",display:"flex",alignItems:"center",padding:"2px",transition:"background 0.2s"}}>
+            <div style={{width:18,height:18,borderRadius:"50%",background:timerOn?"#0a0a0c":"#3a3a5a",transform:timerOn?"translateX(20px)":"translateX(0)",transition:"transform 0.2s"}}/>
+          </div>
+        </div>
+        <button onClick={()=>{setExIdx(0);setSetsDone(0);setScreen("workout");}} style={{width:"100%",padding:"15px",background:"linear-gradient(135deg,#6eb5ff,#4ecdc4)",border:"none",borderRadius:12,color:"#08080a",fontSize:14,fontFamily:"'Courier New',monospace",letterSpacing:"0.1em",fontWeight:"bold",cursor:"pointer"}}>TRAINING STARTEN →</button>
+      </div>
+    </div>
+  );
+
+  // ── WORKOUT ───────────────────────────────────────────────────────────────
+  if (screen==="workout") {
+    const showTimer = timerOn && tmr.phase!=='off';
+    return (
+      <div style={{...base,padding:0}}>
+        {/* Progress bar */}
+        <div style={{height:3,background:"#0f0f12"}}>
+          <div style={{height:"100%",width:`${((exIdx+setsDone/prog.sets)/EX.length)*100}%`,background:`linear-gradient(90deg,${ex.color},${ex.color}88)`,transition:"width 0.4s ease"}}/>
+        </div>
+
+        {/* Top bar */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px 0"}}>
+          <span style={{fontFamily:"'Courier New',monospace",fontSize:11,color:"#2e2e4a"}}>{exIdx+1} / {EX.length}</span>
+          <div style={{display:"flex",gap:12,alignItems:"center"}}>
+            {/* Timer toggle */}
+            <div onClick={toggleTimer} style={{display:"flex",alignItems:"center",gap:5,cursor:"pointer"}}>
+              <div style={{width:32,height:18,borderRadius:9,background:timerOn?"#6eb5ff":"#1a1a28",border:`1px solid ${timerOn?"#6eb5ff":"#2a2a3a"}`,display:"flex",alignItems:"center",padding:"1px",transition:"background 0.2s"}}>
+                <div style={{width:14,height:14,borderRadius:"50%",background:timerOn?"#0a0a0c":"#3a3a5a",transform:timerOn?"translateX(14px)":"translateX(0)",transition:"transform 0.2s"}}/>
+              </div>
+              <span style={{fontFamily:"'Courier New',monospace",fontSize:10,color:"#3a3a52"}}>TIMER</span>
+            </div>
+            <button onClick={()=>setScreen("home")} style={{background:"none",border:"none",color:"#2e2e4a",fontFamily:"'Courier New',monospace",fontSize:11,cursor:"pointer",padding:"2px 6px"}}>✕</button>
+          </div>
+        </div>
+
+        {/* Figure OR Timer ring */}
+        {showTimer
+          ? <TimerRing phase={tmr.phase} secs={tmr.secs} total={tmr.total} rep={tmr.rep} totalReps={tmr.totalReps} color={ex.color} onSkip={skipTimer}/>
+          : <div style={{height:175,width:"100%",maxWidth:290,margin:"12px auto 0",padding:"0 16px"}}><Figure id={exIdx} color={ex.color}/></div>
+        }
+
+        {/* Satz dots */}
+        <div style={{display:"flex",gap:5,margin:"8px 20px 6px"}}>
+          {Array.from({length:prog.sets}).map((_,i)=>(
+            <div key={i} style={{height:4,flex:1,borderRadius:2,background:i<setsDone?ex.color:i===setsDone?ex.color+"50":"#161618",transition:"background 0.3s"}}/>
+          ))}
+        </div>
+
+        {/* Scrollable info area */}
+        <div style={{padding:"4px 20px",flex:1,overflowY:"auto"}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+            <div style={{background:ex.color+"14",border:`1px solid ${ex.color}28`,borderRadius:20,padding:"3px 12px",fontFamily:"'Courier New',monospace",fontSize:10,color:ex.color}}>{ex.cat}</div>
+            {ex.isNew&&<span style={{fontSize:9,background:"#0a1f0a",border:"1px solid #1a3a1a",borderRadius:4,padding:"2px 6px",fontFamily:"'Courier New',monospace",color:"#86efac"}}>NEU</span>}
+          </div>
+
+          <h2 style={{fontSize:22,fontWeight:"normal",letterSpacing:"-0.3px",margin:"0 0 6px"}}>{ex.emoji} {ex.name}</h2>
+
+          <div style={{fontFamily:"'Courier New',monospace",fontSize:12,color:ex.color,marginBottom:8}}>
+            Satz {setsDone+1} von {prog.sets} · {prog.reps} × {prog.tempo}
+          </div>
+
+          {prog.v!=="Basis"&&<div style={{background:"#161400",border:"1px solid #2e2800",borderRadius:8,padding:"8px 12px",fontFamily:"'Courier New',monospace",fontSize:11,color:"#c9a22a",marginBottom:8,lineHeight:1.5}}>↑ {prog.v}{prog.h?<span style={{color:"#5a4e1a",marginLeft:6}}>{prog.h}</span>:null}</div>}
+
+          <p style={{fontSize:13,lineHeight:1.7,color:"#7a7888",marginBottom:8}}>{ex.desc}</p>
+
+          <div style={{background:"#0e0e11",borderLeft:`3px solid ${ex.color}35`,borderRadius:"0 8px 8px 0",padding:"8px 14px",fontSize:12,color:"#50505e",fontStyle:"italic",lineHeight:1.55,marginBottom:2}}>{ex.tip}</div>
+
+          <YTBtn query={ex.yt}/>
+        </div>
+
+        {/* Advance button */}
+        <div style={{padding:"10px 20px 30px"}}>
+          <button onClick={advance} style={{width:"100%",padding:"14px",background:ex.color,border:"none",borderRadius:12,color:"#08080a",fontSize:13,fontFamily:"'Courier New',monospace",letterSpacing:"0.08em",fontWeight:"bold",cursor:"pointer"}}>
+            {setsDone+1<prog.sets?`SATZ ${setsDone+1} ERLEDIGT →`:exIdx+1<EX.length?"ÜBUNG ABGESCHLOSSEN →":"WORKOUT ABGESCHLOSSEN ✓"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── COMPLETE ──────────────────────────────────────────────────────────────
+  return (
+    <div style={{...base,alignItems:"center",justifyContent:"center",padding:28,textAlign:"center"}}>
+      <div style={{fontSize:52,marginBottom:14,lineHeight:1}}>✓</div>
+      <h1 style={{fontSize:26,fontWeight:"normal",margin:"0 0 6px"}}>Workout abgeschlossen</h1>
+      <p style={{fontFamily:"'Courier New',monospace",fontSize:11,color:"#2e2e4a",marginBottom:28}}>{total} Training{total!==1?"s":""} insgesamt</p>
+      {weekUnlocked&&weekIdx<=3&&(
+        <div style={{background:"#091409",border:"1px solid #142814",borderRadius:12,padding:"16px 22px",marginBottom:22,width:"100%",maxWidth:320}}>
+          <div style={{fontFamily:"'Courier New',monospace",fontSize:10,color:"#3a6e3a",letterSpacing:"0.12em",textTransform:"uppercase",marginBottom:6}}>Neue Stufe freigeschaltet</div>
+          <div style={{fontSize:16,color:"#86efac",marginBottom:4}}>{WEEKS[weekIdx].label}</div>
+          <div style={{fontFamily:"'Courier New',monospace",fontSize:11,color:"#3a5a3a"}}>{WEEKS[weekIdx].desc}</div>
+        </div>
+      )}
+      <div style={{background:"#0e0e11",border:"1px solid #161618",borderRadius:12,padding:"16px 20px",width:"100%",maxWidth:320,marginBottom:24,textAlign:"left"}}>
+        <div style={{fontFamily:"'Courier New',monospace",fontSize:10,color:"#2a2a3a",textTransform:"uppercase",letterSpacing:"0.12em",marginBottom:8}}>Aktuell</div>
+        <div style={{fontSize:14,color:"#888",marginBottom:4}}>{WEEKS[weekIdx].label} · {WEEKS[weekIdx].desc}</div>
+        {nextIn?<div style={{fontFamily:"'Courier New',monospace",fontSize:11,color:"#2e2e4a"}}>Woche {weekIdx+2} in {nextIn} Training{nextIn!==1?"s":""}</div>
+               :<div style={{fontFamily:"'Courier New',monospace",fontSize:11,color:"#2e2e4a"}}>Maximum erreicht 🏆</div>}
+      </div>
+      <button onClick={()=>setScreen("home")} style={{padding:"14px 36px",background:"linear-gradient(135deg,#6eb5ff,#4ecdc4)",border:"none",borderRadius:12,color:"#08080a",fontSize:12,fontFamily:"'Courier New',monospace",letterSpacing:"0.1em",fontWeight:"bold",cursor:"pointer"}}>ZUR ÜBERSICHT</button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+<script>if("serviceWorker" in navigator){navigator.serviceWorker.register("./sw.js");}</script>
+</body>
+</html>
